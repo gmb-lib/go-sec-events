@@ -1,6 +1,6 @@
 module github.com/gmb-lib/go-sec-events
 
-go 1.26
+go 1.26.5
 
 require (
 	azugo.io/azugo v0.34.3
