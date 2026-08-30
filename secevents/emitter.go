@@ -1,6 +1,7 @@
 package secevents
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -55,6 +56,56 @@ func (e *Emitter) Emit(ctx *azugo.Context, ev *broker.Envelope) error {
 	}
 
 	return e.sink.Emit(ctx, ev)
+}
+
+// EmitBackground is Emit for work with no request behind it — a scheduled sweep, a
+// purge, a drainer. It tags, sanitizes, stamps and validates exactly as Emit does,
+// then delivers through the sink's background half.
+//
+// It exists because every part of the request path reaches into the *azugo.Context:
+// the log sink borrows the request's logger, the broker sink's publish reads the
+// correlation ids bound to the request, and the stamp reads them too. Handing any of
+// them a nil context is a nil dereference, not a graceful degradation — so a caller
+// without a request has no safe way to use Emit, and would otherwise write the
+// sink's line itself and let the two copies drift.
+//
+// The one difference from Emit: the event carries no correlation or trace id,
+// because there is no request to take them from. Everything else — the id, the
+// occurrence time, the sanitizing, the validation, the rendered shape — is the same.
+//
+// The sink must implement BackgroundSink; one that does not is reported plainly
+// rather than silently dropping the event.
+func (e *Emitter) EmitBackground(ctx context.Context, ev *broker.Envelope) error {
+	if e == nil || e.sink == nil {
+		return errors.New("secevents: emitter has no sink")
+	}
+
+	if ev == nil {
+		return errors.New("secevents: nil envelope")
+	}
+
+	bg, ok := e.sink.(BackgroundSink)
+	if !ok {
+		return errors.New("secevents: sink cannot deliver background events (it implements Sink only)")
+	}
+
+	if len(ev.Categories) == 0 {
+		ev.Categories = []broker.Category{broker.CategorySecurity}
+	}
+
+	ev.Attributes = sanitize(ev.Attributes)
+
+	// The same stamp the request path takes, with no request to draw correlation
+	// from — it still mints the id, sets the time, and strips token-shaped keys.
+	// Going through it rather than stamping locally is the point: the stripping is
+	// the security-relevant half, and a hand-rolled stamp is where it gets lost.
+	broker.Stamp(nil, ev)
+
+	if err := ev.Validate(); err != nil {
+		return err
+	}
+
+	return bg.EmitBackground(ctx, ev)
 }
 
 // security builds a security envelope skeleton with the severity recorded as an
