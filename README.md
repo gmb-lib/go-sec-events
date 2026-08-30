@@ -27,6 +27,9 @@ a high-precision occurrence time, and the request's correlation/trace ids. A plu
 go get github.com/gmb-lib/go-sec-events
 ```
 
+See [`CHANGELOG.md`](./CHANGELOG.md) for what each release changed, and what it means for code that
+already uses this library, before you bump.
+
 ## Usage
 
 ```go
