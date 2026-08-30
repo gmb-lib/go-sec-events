@@ -21,6 +21,33 @@ a high-precision occurrence time, and the request's correlation/trace ids. A plu
 | `LogSink` | structured log lines on the request logger → the log pipeline ships them to the SIEM (the common path) |
 | `BrokerSink` | the broker event stream → fans into the SIEM |
 
+### Events from work with no request
+
+A scheduled sweep, a retention purge or an outbox drainer has no request to borrow a logger or
+correlation ids from. `EmitBackground` is the entry point for those: same tagging, sanitizing,
+stamping and validation, minus the correlation ids there is nothing to take.
+
+```go
+// A log sink that serves BOTH paths needs a logger of its own for the background one.
+audit := secevents.NewEmitter(secevents.NewLogSinkFor(app.Log()))
+
+// From a scheduled task:
+_ = audit.EmitBackground(ctx, &broker.Envelope{
+    EventType: "document.retention_swept",
+    Operation: broker.OpDelete,
+    Outcome:   broker.OutcomeSuccess,
+    Attributes: map[string]any{secevents.AttrSeverity: string(secevents.SeverityInfo), "erased": 4},
+})
+```
+
+The sink must implement `BackgroundSink` — `LogSink` (built with `NewLogSinkFor`) and `BrokerSink`
+both do. It is a separate interface from `Sink` so adding it broke no existing implementation; one
+that does not implement it is told so rather than having its event dropped.
+
+**Do not hand-roll this.** Writing the sink's log line yourself is what the absence of this entry
+point used to force, and it loses the token stripping `Stamp` performs — which is the part that
+keeps a credential out of the security stream.
+
 ## Install
 
 ```sh
