@@ -27,6 +27,9 @@ a high-precision occurrence time, and the request's correlation/trace ids. A plu
 go get github.com/gmb-lib/go-sec-events
 ```
 
+See [`CHANGELOG.md`](./CHANGELOG.md) for what each release changed, and what it means for code that
+already uses this library, before you bump.
+
 ## Usage
 
 ```go
@@ -103,6 +106,14 @@ go build ./...
 go test ./...
 go vet ./...
 ```
+
+## Contributing
+
+Bug reports and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) names the gate a
+change has to pass, what a change to this library needs, and the sign-off every commit carries.
+
+Suspected vulnerabilities go through the private route in [SECURITY.md](SECURITY.md) — never a
+public issue.
 
 ## License
 
