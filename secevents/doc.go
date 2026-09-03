@@ -12,12 +12,14 @@
 // common path), or a BrokerSink publishes them onto the event stream. The library
 // is decoupled from the concrete transport so it stays in-process glue.
 //
-// # NIS2 timing (24-72-30)
+// # NIS2 timing (24 h / 72 h / one month)
 //
 // The occurrence time is a high-precision, synced-clock instant so the NIS2
-// reporting clock is defensible: 24 h early warning, 72 h notification, 30 d final
-// report from "when we first became aware." FirstAwareness captures that instant
-// explicitly and returns it, so the caller can record it in the incident register.
+// reporting clock is defensible: an early warning within 24 h and a notification
+// within 72 h of "when we first became aware", then a final report within one
+// month of that notification — the last deadline runs from the notification, not
+// from awareness. FirstAwareness captures the awareness instant explicitly and
+// returns it, so the caller can record it in the incident register.
 //
 // # PII posture
 //
