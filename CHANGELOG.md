@@ -4,6 +4,66 @@ Notable changes to this library, newest first. Versions are git tags; this file 
 for whoever bumps the dependency — what changed, and what it means for code that already
 uses it.
 
+## v1.2.1
+
+Dependency maintenance with one thing to act on: **this library now needs Go 1.27**. No source
+changed here — but one piece of documentation was wrong about a regulatory deadline, and the
+platform kit moves two patch releases in one step with an upstream behaviour change riding along.
+See *Fixed* and *Notes*.
+
+### Changed
+
+- **The module declares `go 1.27.0`** (was `1.26.6`), so your own module has to be on Go 1.27
+  before it can build against this one. A dependency's `go` line does **not** make the go command
+  fetch a newer toolchain for you — measured both ways: a consumer whose own `go` directive is
+  lower stops with a `requires go >= 1.27.0 (running go 1.26.6)` error, and it stops there with
+  `GOTOOLCHAIN` on its `auto` default just as it does under `local`. Raise your own `go` directive
+  to `1.27.0` first; from there the go command downloads and uses the 1.27 toolchain by itself, so
+  nobody has to install Go by hand. CI that reads `go-version-file: go.mod` follows the bump with
+  no workflow edit — a workflow naming a Go version in the YAML needs that line changed.
+
+### Fixed
+
+- **The documented reporting clock said the final report is due 30 days after awareness. It is due
+  one month after the *notification*.** The shorthand "24-72-30" the README, `SECURITY.md` and the
+  package documentation all used compressed three deadlines with two different anchors into one
+  string, and got the last one wrong: an early warning within 24 h and a notification within 72 h
+  of first awareness, then a final report **within one month of that notification**. No code
+  changed — `FirstAwareness` captures and returns the awareness instant exactly as before — but if
+  you built an incident-register deadline off the old wording, it was computed from the wrong
+  anchor. The shorthand is now spelled out as `24 h / 72 h / 1 month` wherever it appeared.
+
+### Notes
+
+- **`github.com/gmb-lib/go-platform-kit` → v1.11.3** (was v1.11.1), and with it the framework:
+  `azugo.io/azugo`, `azugo.io/core` and `azugo.io/opentelemetry` → **v0.38.1**,
+  `github.com/valyala/fasthttp` → **v1.74.0**. Nothing this library takes from any of them moved —
+  it has no metrics code and touches fasthttp only in a test.
+
+  **One thing in that framework release is visible to your monitoring, not to your code, and it
+  arrives with nothing to opt into.** From azugo v0.38.1 the metrics endpoint no longer negotiates
+  OpenMetrics: a scraper sending `Accept: application/openmetrics-text` is answered
+  `Content-Type: text/plain; version=0.0.4; charset=utf-8` with no `# EOF` terminator, where it used
+  to get the OpenMetrics format. **The metric names, labels and values are unchanged.** It reaches a
+  service through the platform kit, which binds azugo's metrics configuration — so if your scrape
+  configuration demands the OpenMetrics content type, or treats a missing `# EOF` as a truncated
+  scrape, **check it before you deploy**.
+
+- **One module leaves the dependency graph and another joins it**, both transitively through
+  fasthttp: `github.com/andybalholm/brotli` is gone and `github.com/molecule-man/go-brrr` v1.1.0
+  provides the brotli implementation in its place. Also moved indirectly:
+  `go-playground/validator/v10` → v10.30.4, `klauspost/compress` → v1.20.0, `golang.org/x/crypto` →
+  v0.57.0, `x/net` → v0.59.0, `x/sys` → v0.48.0, `x/text` → v0.42.0, and the
+  `google.golang.org/genproto/googleapis/{api,rpc}` snapshots → 20260911204522. Nothing in this
+  library calls any of them directly.
+
+- The repository gained a code of conduct, and the advisory DCO workflow was removed now that the
+  sign-off is enforced by the organisation's app together with a branch ruleset. What a contribution
+  has to carry is unchanged.
+
+- The gate is green on the new set: `go mod verify`, `go mod tidy -diff`, build, vet, `gofmt`, and
+  `go test -race` with **0 races**; `govulncheck` finds nothing.
+
 ## v1.2.0 — a security event can come from work with no request behind it
 
 Additive: `Sink`, `Emit`, `NewLogSink` and `NewBrokerSink` all keep their signatures, so existing
