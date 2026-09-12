@@ -5,7 +5,7 @@ standard way for **every service** to emit structured security events — auth f
 authZ/IDOR denials, DPoP/proof failures, egress/NetworkPolicy violations, secret/key
 access, privileged/admin actions, and **"first-awareness"** incident detections — to the
 **SIEM / central log management**, with high-precision synced timestamps so the NIS2
-**24-72-30** reporting clock is defensible.
+**24 h / 72 h / 1 month** reporting clock is defensible.
 
 **Scope:** this library targets [Azugo](https://azugo.io) services — its entrypoints take
 `*azugo.Context` by design, and it is versioned in lockstep with the Azugo-based platform

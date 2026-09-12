@@ -2,7 +2,7 @@
 
 This library is how every service in a fleet emits its security events — authentication failures,
 authorization denials, proof failures, egress violations, secret and key access, privileged
-actions, and the **first-awareness** detection that anchors the NIS2 24-72-30 reporting clock. It
+actions, and the **first-awareness** detection that anchors the NIS2 24 h / 72 h / 1 month reporting clock. It
 is the code an investigation reads afterwards, and the code a regulator's timeline is built from.
 Both make its failure modes distinctive: an event that is missing or wrongly timed is a reporting
 failure, not a logging inconvenience — and an event that carries the credential it is reporting on
